@@ -2,33 +2,40 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include <iomanip>
 
 using namespace std;
 using Matriz = vector<vector<float>>;
 
 Matriz abrir_matriz(string nome);
-bool imprimir(Matriz matriz);
+bool imprimir(Matriz matriz, int precision);
 bool transpor(Matriz matriz);
 bool negativar(Matriz &matriz);
 bool mult_escalar(Matriz &matriz, float esc);
 Matriz somar(Matriz m1, Matriz m2);
 Matriz multi(Matriz m1, Matriz m2);
 float determinante(Matriz m1);
+Matriz identidade(int ordem);
+Matriz inversora(Matriz m1);
 
 int main(){
 	Matriz m1  = abrir_matriz("matriz.txt");
 	Matriz m2 = abrir_matriz("matriz2.txt");
 	
-	imprimir(m1);
-	//imprimir(m2);
+	imprimir(m1,3);
+	//imprimir(m2,3);
 	/*Matriz m3 = multi(m1,m2);
 	if(!m3.empty()){
-		imprimir(m3);
+		imprimir(m3,3);
 	}else{
 		cout<<"falhou";
 	}*/
 	float det = determinante(m1);
-	cout<<det<<endl;
+	cout<<det<<endl<<endl;
+	//m2=identidade(5);
+	//imprimir(m2,3);
+	m2 = inversora(m1);
+	imprimir(m2,3);
 }
 
 Matriz abrir_matriz(string nome){
@@ -53,10 +60,10 @@ Matriz abrir_matriz(string nome){
 	return matriz;
 }
 
-bool imprimir(Matriz matriz){
+bool imprimir(Matriz matriz, int precision){
 	for(vector<float> v : matriz){
 		for(float n : v){
-			cout<<n<<"\t";
+			cout<<fixed<<setprecision(precision)<<n<<"\t";
 		}
 		cout<<endl;
 	}
@@ -152,4 +159,73 @@ float determinante(Matriz m1){
 		det*=m1[i][i];
 	}
 	return det;
+}
+
+Matriz identidade(int ordem){
+	if(ordem<=0){
+		return {};
+	}
+	Matriz id(ordem,vector<float>(ordem,0.0f));
+	
+	for(int i=0;i<ordem;i++){
+		id[i][i]=1.0;
+	}
+	return id;
+}
+
+Matriz inversora(Matriz m1){
+	if(determinante(m1)==0){
+		return {};
+	}
+	
+	Matriz inv = identidade(m1.size());
+	//etapas que transformam m1 em identidade devem ser repetidas na inversora
+	//transformar em triangular superior e inferior gera identidade
+	vector<float> pivo(m1.size(),0);
+	vector<float> pivo_inv(m1.size(),0);
+	float coef;
+	
+	for(int i=0;i<m1.size()-1;i++){
+		for(int j=0;j<m1[i].size();j++){
+			pivo[j]=m1[i][j];
+			pivo_inv[j]=inv[i][j];
+		}
+		
+		for(int j=i+1;j<m1.size();j++){
+			coef=m1[j][i]/pivo[i];
+			//tem q subtrair a linha pivo na linha j
+			for(int k=0;k<m1.size();k++){
+				m1[j][k]-=(coef*pivo[k]);
+				inv[j][k]-=(coef*pivo_inv[k]);
+			}
+		}
+	}
+	
+	for(int i=m1.size()-1;i>0;i--){
+		for(int j=0;j<m1[i].size();j++){
+			pivo[j]=m1[i][j];
+			pivo_inv[j]=inv[i][j];
+		}
+		
+		for(int j=i-1;j>=0;j--){
+			coef=m1[j][i]/pivo[i];
+			//tem q subtrair a linha pivo na linha j
+			for(int k=0;k<m1.size();k++){
+				m1[j][k]-=(coef*pivo[k]);
+				inv[j][k]-=(coef*pivo_inv[k]);
+			}
+		}
+	}
+	
+	for(int i=0;i<m1.size();i++){
+		coef=1/m1[i][i];
+		m1[i][i]*=coef;
+		for(int j=0;j<m1.size();j++){
+			inv[i][j]*=coef;
+		}
+	}
+	
+	return inv;
+	//zerar valores fora da diagonal principal
+	//dividir valores da diagonal principal
 }
